@@ -8,7 +8,7 @@ let sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 puppeteer.use(StealthPlugin())
 
 
-puppeteer.launch({headless: false, args: ['--no-sandbox']}).then(async browser => {
+puppeteer.launch({headless: true, args: ['--no-sandbox']}).then(async browser => {
     const comicUrl = "https://www.cocomanga.com/10101/"
     const concurrent = 30
     let page = await browser.newPage();
