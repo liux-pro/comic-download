@@ -10,6 +10,7 @@ puppeteer.use(StealthPlugin())
 
 puppeteer.launch({headless: false, args: ['--no-sandbox']}).then(async browser => {
     const comicUrl = "https://www.cocomanga.com/10101/"
+    const concurrent = 3
     let page = await browser.newPage();
     await page.goto(comicUrl)
     await page.waitForSelector(".fed-visible>.all_data_list>ul>li>a")
@@ -18,14 +19,23 @@ puppeteer.launch({headless: false, args: ['--no-sandbox']}).then(async browser =
     const length = urlList.length
     await page.close()
     const timer = setInterval(async () => {
-        console.log((await browser.pages()).length)
+        console.log(`同时下载${(await browser.pages()).length}个`)
+        if (!browser.isConnected()) {
+            clearInterval(timer)
+        }
+
     }, 2000);
 
     let tasks = []
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < urlList.length; i++) {
         const url = urlList[i]
         console.log(`下载第${i + 1}话，共${length}话,url:${url}`)
+        while (((await browser.pages()).length - 1) > concurrent) {
+            await sleep(1000)
+        }
         tasks.push(comic(url.toString(), browser, i + 1))
+        await sleep(300)
+
     }
     await Promise.all(tasks)
 
@@ -41,11 +51,11 @@ async function comic(url, browser, count) {
     await page.setViewport({width: 800, height: 99999})
 
     let buffers = new Map()
-    page.on('response',async response => {
-        if (response.url().indexOf("img.cocomanga.com") > -1 ) {
-            if (response.ok()){
-                buffers.set(response.url().toString(), response.buffer())
-            }else {
+    page.on('response', async response => {
+        if (response.url().indexOf("img.cocomanga.com") > -1) {
+            if (response.ok()) {
+                buffers.set(response.url().toString(), await response.buffer())
+            } else {
                 // 存在图片加载失败
                 console.log("图片加载失败")
                 page.close()
@@ -67,10 +77,17 @@ async function comic(url, browser, count) {
     if (size < 1) {
         console.error(url)
     }
+    if (imgSrcList.length !== buffers.size) {
+        console.log(`${count}，缓存不匹配`)
+        await page.close()
+        return
+    }
+
     const dir = `${count}@${title}`
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir)
     }
+
     for (let i = 0; i < imgSrcList.length; i++) {
         const url = imgSrcList[i].toString()
         //img buffer是个promise
@@ -81,16 +98,10 @@ async function comic(url, browser, count) {
                 break;
             }
             await sleep(300)
-            console.log(`${imgSrcList.length},,${buffers.size}`)
-            console.log(buffers.keys())
-            console.log(imgSrcList)
         }
         //扩展名
         let ext = path.extname(url);
-        console.log(`before${count}--${i+1}/${imgSrcList.length}`)
-        let data = await img;
-        console.log(`write${count}--${i+1}/${imgSrcList.length}`)
-        fs.writeFile(path.join(dir, `${i}${ext}`), data, err => {
+        fs.writeFile(path.join(dir, `${i=1}${ext}`), img, err => {
             if (err) {
                 console.error(err)
             }
