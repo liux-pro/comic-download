@@ -8,7 +8,7 @@ let sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 puppeteer.use(StealthPlugin())
 
 
-puppeteer.launch({headless: true, args: ['--no-sandbox']}).then(async browser => {
+puppeteer.launch({headless: false, args: ['--no-sandbox']}).then(async browser => {
     const comicUrl = "https://www.cocomanga.com/10101/"
     const concurrent = 30
     let page = await browser.newPage();
@@ -101,7 +101,7 @@ async function comic(url, browser, count) {
         }
         //扩展名
         let ext = path.extname(url);
-        fs.writeFile(path.join(dir, `${i=1}${ext}`), img, err => {
+        fs.writeFile(path.join(dir, `${i+1}${ext}`), img, err => {
             if (err) {
                 console.error(err)
             }
