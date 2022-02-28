@@ -10,7 +10,7 @@ puppeteer.use(StealthPlugin())
 
 puppeteer.launch({headless: false, args: ['--no-sandbox']}).then(async browser => {
     const comicUrl = "https://www.cocomanga.com/10101/"
-    const concurrent = 3
+    const concurrent = 30
     let page = await browser.newPage();
     await page.goto(comicUrl)
     await page.waitForSelector(".fed-visible>.all_data_list>ul>li>a")
