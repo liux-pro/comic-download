@@ -4,13 +4,30 @@ const fs = require('fs')
 const path = require("path")
 //延迟函数
 let sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+//断点续传
+let files = fs.readdirSync(".");
+const index = files.filter(file => {
+    //文件名规则   index@pages@title
+    //检查有没有两个@
+    let first = file.indexOf("@");
+    let last = file.lastIndexOf("@");
+    return last > -1 && first > -1 && first !== last
+}).filter(file => {
+    //检查图片数量和实际数量相等
+    let imageCount = parseInt(file.split("@")[1]);
+    let count = fs.readdirSync(file).length;
+    return imageCount === count
+}).map(file => {
+    //形成一个已下载序号列表
+    return parseInt(file.split("@")[0])
+})
 //开启反-反爬虫
 puppeteer.use(StealthPlugin())
 
 
-puppeteer.launch({headless: false, args: ['--no-sandbox']}).then(async browser => {
+puppeteer.launch({headless: true, args: ['--no-sandbox']}).then(async browser => {
     const comicUrl = "https://www.cocomanga.com/10101/"
-    const concurrent = 30
+    const concurrent = 10
     let page = await browser.newPage();
     await page.goto(comicUrl)
     await page.waitForSelector(".fed-visible>.all_data_list>ul>li>a")
@@ -19,15 +36,20 @@ puppeteer.launch({headless: false, args: ['--no-sandbox']}).then(async browser =
     const length = urlList.length
     await page.close()
     const timer = setInterval(async () => {
-        console.log(`同时下载${(await browser.pages()).length}个`)
         if (!browser.isConnected()) {
             clearInterval(timer)
+        } else {
+            console.log(`同时下载${(await browser.pages()).length - 1}个`)
         }
 
     }, 2000);
 
     let tasks = []
-    for (let i = 0; i < urlList.length; i++) {
+    for (let i = 0; i < 20; i++) {
+        if (index.includes((i + 1))) {
+            console.log(`跳过第${i + 1}话，共${length}话`)
+            continue
+        }
         const url = urlList[i]
         console.log(`下载第${i + 1}话，共${length}话,url:${url}`)
         while (((await browser.pages()).length - 1) > concurrent) {
@@ -83,7 +105,7 @@ async function comic(url, browser, count) {
         return
     }
 
-    const dir = `${count}@${title}`
+    const dir = `${count}@${imgSrcList.length}@${title}`
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir)
     }
@@ -101,7 +123,7 @@ async function comic(url, browser, count) {
         }
         //扩展名
         let ext = path.extname(url);
-        fs.writeFile(path.join(dir, `${i+1}${ext}`), img, err => {
+        fs.writeFile(path.join(dir, `${i + 1}${ext}`), img, err => {
             if (err) {
                 console.error(err)
             }

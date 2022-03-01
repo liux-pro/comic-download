@@ -40,3 +40,9 @@ page.setViewport({width: 800, height: 99999})
 ```
 ## 响应体为空但是获取响应体会报错
 https://github.com/puppeteer/puppeteer/issues/2176#issuecomment-434665348
+## in关键字
+js的in关键字与python等不同，js里的in只能用于`object`的key  
+数组会被是为对象，key为编号
+```
+['a','b','c']={0:'a',1:'b',2:'c'}
+```
