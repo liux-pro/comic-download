@@ -13,6 +13,9 @@ if (!fs.existsSync(download_path)) {
 
 //断点续传
 function buildIndex(title) {
+    if (!fs.existsSync(path.join(download_path, title))){
+        return []
+    }
     let files = fs.readdirSync(path.join(download_path, title));
     return files.filter(file => {
         //文件名规则   index@pages@title
