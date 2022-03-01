@@ -83,8 +83,29 @@ puppeteer.launch({headless: true, args: ['--no-sandbox']}).then(async browser =>
     console.log("___________________________________________________________________")
     console.log(`共${all}话，跳过${jump}个，本次成功下载${success}个，本次下载失败${fail}个`)
     if (all === jump + success) {
-        const newIndex = buildIndex()
-        fs.writeFileSync(path.join(download_path, `${title}.json`), JSON.stringify(newIndex))
+        let newIndex = buildIndex(title)
+        const dirNameList = newIndex.sort((a, b) => {
+            return parseInt(a.split("@")[0]) - parseInt(b.split("@")[0])
+        })
+        let map = new Map();
+        let map_abs = new Map();
+        for (let i = 0; i < dirNameList.length; i++) {
+            let name = dirNameList[i];
+            let picList = fs.readdirSync(path.join(download_path, title, name));
+
+            path.basename(name)
+            map.set(name, picList.sort((a, b) => {
+                const re = /\d+/
+                return parseInt(re.exec(a)[0]) - parseInt(re.exec(b)[0])
+            }))
+            map_abs.set(name, picList.sort((a, b) => {
+                const re = /\d+/
+                return parseInt(re.exec(a)[0]) - parseInt(re.exec(b)[0])
+            }).map((item) => path.resolve(download_path, title, name, item)))
+        }
+        fs.writeFileSync(path.join(download_path, title, `${title}.json`), JSON.stringify(mapToObj(map), null, 2))
+        fs.writeFileSync(path.join(download_path, title, `${title}.abs.json`), JSON.stringify(mapToObj(map_abs), null, 2))
+
         console.log(`全部下载成功，已生成${title}.json`)
     } else {
         console.log("部分下载失败，请重新执行")
@@ -160,4 +181,23 @@ async function comic(url, browser, count, dir) {
     console.log(`成功下载${count}`)
     success++
     await page.close()
+}
+
+//utils
+function mapToObj(strMap) {
+    let obj = Object.create(null);
+    for (let [k, v] of strMap) {
+        // We don’t escape the key '__proto__'
+        // which can cause problems on older engines
+        obj[k] = v;
+    }
+    return obj;
+}
+
+function objToMap(obj) {
+    let strMap = new Map();
+    for (let k of Object.keys(obj)) {
+        strMap.set(k, obj[k]);
+    }
+    return strMap;
 }
