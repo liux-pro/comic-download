@@ -27,7 +27,7 @@ puppeteer.use(StealthPlugin())
 
 puppeteer.launch({headless: true, args: ['--no-sandbox']}).then(async browser => {
     const comicUrl = "https://www.cocomanga.com/10101/"
-    const concurrent = 10
+    const concurrent = 100
     let page = await browser.newPage();
     await page.goto(comicUrl)
     await page.waitForSelector(".fed-visible>.all_data_list>ul>li>a")
@@ -45,7 +45,7 @@ puppeteer.launch({headless: true, args: ['--no-sandbox']}).then(async browser =>
     }, 2000);
 
     let tasks = []
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < urlList.length; i++) {
         if (index.includes((i + 1))) {
             console.log(`跳过第${i + 1}话，共${length}话`)
             continue
